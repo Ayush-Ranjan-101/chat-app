@@ -5,7 +5,13 @@ import {
   signUpVSchema,
   logInVSchema,
 } from "../validators/authValidator.validators.js";
-import { signUp, logIn, logOut } from "../controllers/auth.controllers.js";
+import {
+  signUp,
+  logIn,
+  logOut,
+  updateProfile,
+} from "../controllers/auth.controllers.js";
+import { upload } from "../middlewares/multer.middlewares.js";
 
 import { verifyJWT } from "../middlewares/auth.middlewares.js";
 const router = Router();
@@ -16,5 +22,15 @@ router.route("/login").post(validate(logInVSchema), logIn);
 
 // Secured routes
 router.route("/logout").post(verifyJWT, logOut);
+router.route("/profile").put(
+  verifyJWT,
+  upload.fields([
+    {
+      name: "profilePic",
+      maxCount: 1,
+    },
+  ]),
+  updateProfile,
+);
 
 export default router;
