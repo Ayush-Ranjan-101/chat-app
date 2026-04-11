@@ -20,7 +20,12 @@ app.use(
 );
 
 import healthCheckRouter from "./routes/healthCheckRouter.routes.js";
+import authRouter from "./routes/authRouter.routes.js";
 
 app.use("/api/v1/healthcheck", healthCheckRouter);
+app.use("/api/v1/auth", authRouter);
+
+import errorHandler from "./middlewares/errorHandler.middlewares.js";
+app.use(errorHandler);
 
 export default app;

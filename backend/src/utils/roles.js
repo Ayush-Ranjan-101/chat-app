@@ -1,6 +1,6 @@
 const rolesEnum = {
   ADMIN: "admin",
-  USER: "user"
+  USER: "user",
 };
 
-export {rolesEnum};
+export { rolesEnum };
