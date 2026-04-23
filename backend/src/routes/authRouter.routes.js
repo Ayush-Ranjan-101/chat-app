@@ -10,6 +10,13 @@ import {
   logIn,
   logOut,
   updateProfile,
+  getFriends,
+  getPotentialFriends,
+  sendFriendRequest,
+  showFriendRequests,
+  acceptFriendRequest,
+  discardFriendRequest,
+  removeFriend,
 } from "../controllers/auth.controllers.js";
 import { upload } from "../middlewares/multer.middlewares.js";
 
@@ -32,5 +39,14 @@ router.route("/profile").put(
   ]),
   updateProfile,
 );
+router.route("/").get(verifyJWT, getFriends);
+router.route("/").delete(verifyJWT, removeFriend);
+
+router.route("/friends").get(verifyJWT, getPotentialFriends);
+router.route("/friends").post(verifyJWT, sendFriendRequest);
+
+router.route("/friends/requests").get(verifyJWT, showFriendRequests);
+router.route("/friends/requests").post(verifyJWT, acceptFriendRequest);
+router.route("/friends/requests").delete(verifyJWT, discardFriendRequest);
 
 export default router;

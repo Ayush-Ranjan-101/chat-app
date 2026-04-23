@@ -8,6 +8,19 @@ const userSchema = new mongoose.Schema(
     email: String,
     password: String,
     profilePic: String,
+    isBlocked: Boolean,
+    friends: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    friendsRequests: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
     refreshToken: String,
     accessToken: String,
   },
@@ -24,7 +37,7 @@ userSchema.methods.generateAccessToken = function () {
   return jwt.sign(
     {
       _id: this._id,
-      name: this.userName,
+      name: this.username,
       email: this.email,
     },
     process.env.ACCESS_TOKEN_SECRET,

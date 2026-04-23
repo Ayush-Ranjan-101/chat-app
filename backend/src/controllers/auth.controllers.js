@@ -182,4 +182,182 @@ const updateProfile = asyncHandler(async (req, res) => {
   );
 });
 
-export { signUp, logIn, logOut, updateProfile };
+const getFriends = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).populate(
+    "friends",
+    "_id username profilePic isBlocked",
+  );
+
+  if (!user) throw new ApiError(404, "User not found");
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { friends: user.friends },
+        "friends fetched successfully",
+      ),
+    );
+});
+
+const getPotentialFriends = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  const Allusers = await User.find({
+    $and: [
+      { _id: { $ne: user } }, // Not me
+      { _id: { $nin: user.friends } }, // Not already friends
+      { _id: { $nin: user.friendsRequests } }, // Not already requested
+    ],
+  }).select("_id username profilePic");
+
+  if (!Allusers) throw new ApiError(404, "User not found");
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { Allusers }, "All users fetched successfully"));
+});
+
+const sendFriendRequest = asyncHandler(async (req, res) => {
+  const { targetUserId } = req.body;
+  const loggedInUserId = req.user._id;
+
+  const targetUser = await User.findById(targetUserId);
+
+  if (!targetUser) throw new ApiError(404, "User not found");
+
+  if (targetUser.friendsRequests.includes(loggedInUserId)) {
+    return res
+      .status(400)
+      .json(new ApiResponse(400, {}, "Request already sent"));
+  }
+
+  targetUser.friendsRequests.push(loggedInUserId);
+
+  const friend = await User.findById(targetUserId).select(
+    "-password -accessToken -refreshToken -friends",
+  );
+
+  await targetUser.save();
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { friend }, "Friend request sent successfully"));
+});
+
+const showFriendRequests = asyncHandler(async (req, res) => {
+  const loggedInUserId = req.user._id;
+
+  // Find the user and populate the 'friendsRequests' array with specific fields
+  const user = await User.findById(loggedInUserId)
+    .populate("friendsRequests", "username email profilePic")
+    .select("friendsRequests");
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { requests: user.friendsRequests },
+        "Friend requests fetched successfully",
+      ),
+    );
+});
+
+const acceptFriendRequest = asyncHandler(async (req, res) => {
+  const { requesterId } = req.body; // The ID of the person who sent the request
+  const loggedInUserId = req.user._id; // The person clicking "Accept"
+
+  // 1. Check if the request exists before proceeding
+  const user = await User.findById(loggedInUserId);
+  if (!user.friendsRequests.includes(requesterId)) {
+    throw new ApiError(400, "No pending friend request from this user");
+  }
+
+  // 2. Update the Logged-in User (Recipient)
+  // Pull from requests and add to friends
+  await User.findByIdAndUpdate(loggedInUserId, {
+    $pull: { friendsRequests: requesterId },
+    $addToSet: { friends: requesterId },
+  });
+
+  // 3. Update the Requester (Sender)
+  // Add the logged-in user to their friends list
+  await User.findByIdAndUpdate(requesterId, {
+    $addToSet: { friends: loggedInUserId },
+  });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Friend request accepted successfully"));
+});
+
+const discardFriendRequest = asyncHandler(async (req, res) => {
+  const { requestedId } = req.body;
+  const loggedInUser = req.user._id;
+
+  const newUser = await User.findOneAndUpdate(
+    loggedInUser,
+    {
+      $pull: { friendsRequests: requestedId },
+    },
+    {
+      returnDocument: "after",
+    },
+  ).select("-password -refreshToken -accessToken");
+
+  if (!newUser) throw new ApiError(404, "Failed to discard request");
+
+  return res.status(200).json(new ApiResponse(200, {requests: newUser.friendsRequests}));
+});
+
+const removeFriend = asyncHandler(async (req, res) => {
+  const { targetUserId } = req.body; // The ID of the friend to be removed
+  const loggedInUserId = req.user._id;
+
+  // 1. Check if the target user exists
+  const targetUser = await User.findById(targetUserId);
+  if (!targetUser) {
+    throw new ApiError(404, "User not found");
+  }
+
+  // 2. Perform the mutual removal
+  // Remove targetUserId from logged-in user's 'friends' array
+  const updatedUser = await User.findByIdAndUpdate(
+    loggedInUserId,
+    {
+      $pull: { friends: targetUserId },
+    },
+    {
+      returnDocument: "after"
+    }
+  ).select("-password -refreshToken -accessToken");
+
+  // Remove logged-in user from the target user's 'friends' array
+  await User.findByIdAndUpdate(targetUserId, {
+    $pull: { friends: loggedInUserId },
+  });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, updatedUser, "Friend removed successfully"));
+});
+
+export {
+  signUp,
+  logIn,
+  logOut,
+  updateProfile,
+  getFriends,
+  getPotentialFriends,
+  sendFriendRequest,
+  showFriendRequests,
+  acceptFriendRequest,
+  discardFriendRequest,
+  removeFriend,
+};
