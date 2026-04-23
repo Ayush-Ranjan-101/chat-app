@@ -21,9 +21,11 @@ app.use(
 
 import healthCheckRouter from "./routes/healthCheckRouter.routes.js";
 import authRouter from "./routes/authRouter.routes.js";
+import messageRouter from "./routes/messageRouter.routes.js";
 
 app.use("/api/v1/healthcheck", healthCheckRouter);
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/messages", messageRouter);
 
 import errorHandler from "./middlewares/errorHandler.middlewares.js";
 app.use(errorHandler);
