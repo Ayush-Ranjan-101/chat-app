@@ -25,7 +25,7 @@ router.route("/send/:id").post(
   sendMessage,
 );
 
-router.route("/:id/update").patch(verifyJWT, updateMessage)
+router.route("/:id/update").patch(verifyJWT, updateMessage);
 router.route("/:id/delete").delete(verifyJWT, deleteMessage);
 
 export default router;

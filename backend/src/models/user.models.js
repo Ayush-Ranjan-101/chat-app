@@ -8,7 +8,15 @@ const userSchema = new mongoose.Schema(
     email: String,
     password: String,
     profilePic: String,
-    isBlocked: Boolean,
+    isBlocked: {
+      type: Boolean,
+      default: false,
+    },
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
+    },
     friends: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -39,6 +47,7 @@ userSchema.methods.generateAccessToken = function () {
       _id: this._id,
       name: this.username,
       email: this.email,
+      role: this.role,
     },
     process.env.ACCESS_TOKEN_SECRET,
     { expiresIn: process.env.ACCESS_TOKEN_EXPIRY },

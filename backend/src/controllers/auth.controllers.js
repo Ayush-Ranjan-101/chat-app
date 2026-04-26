@@ -82,18 +82,30 @@ const logIn = asyncHandler(async (req, res) => {
     throw new ApiError(400, "User does not exists");
   }
 
-  const isPasswordValid = bcrypt.compare(password, user.password);
+  const isPasswordValid = await bcrypt.compare(password, user.password);
 
   if (!isPasswordValid) {
     throw new ApiError(401, "Invalid user credentials");
   }
 
-  const { refreshToken, accessToken } = await generateAccessAndRefreshToken(
-    user._id,
-  );
-
   const loggedInUser = await User.findById(user._id).select(
     "-password -refreshToken",
+  );
+
+  if (loggedInUser.isBlocked) {
+    return res
+      .status(403)
+      .json(
+        new ApiResponse(
+          403,
+          loggedInUser,
+          "Your account has been suspended. Please contact support.",
+        ),
+      );
+  }
+
+  const { refreshToken, accessToken } = await generateAccessAndRefreshToken(
+    user._id,
   );
 
   const options = {
@@ -313,7 +325,9 @@ const discardFriendRequest = asyncHandler(async (req, res) => {
 
   if (!newUser) throw new ApiError(404, "Failed to discard request");
 
-  return res.status(200).json(new ApiResponse(200, {requests: newUser.friendsRequests}));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { requests: newUser.friendsRequests }));
 });
 
 const removeFriend = asyncHandler(async (req, res) => {
@@ -334,8 +348,8 @@ const removeFriend = asyncHandler(async (req, res) => {
       $pull: { friends: targetUserId },
     },
     {
-      returnDocument: "after"
-    }
+      returnDocument: "after",
+    },
   ).select("-password -refreshToken -accessToken");
 
   // Remove logged-in user from the target user's 'friends' array

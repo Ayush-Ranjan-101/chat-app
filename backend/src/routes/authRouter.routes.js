@@ -19,8 +19,16 @@ import {
   removeFriend,
 } from "../controllers/auth.controllers.js";
 import { upload } from "../middlewares/multer.middlewares.js";
+import { isAdmin } from "../middlewares/role.middlewares.js";
 
 import { verifyJWT } from "../middlewares/auth.middlewares.js";
+import {
+  deleteUserAccount,
+  getAllUsers,
+  getBlockedUsers,
+  toggleBlockUser,
+} from "../controllers/admin.controllers.js";
+import { isBlocked } from "../middlewares/access.middlewares.js";
 const router = Router();
 
 // Unsecured routes
@@ -28,9 +36,14 @@ router.route("/signup").post(validate(signUpVSchema), signUp);
 router.route("/login").post(validate(logInVSchema), logIn);
 
 // Secured routes
-router.route("/logout").post(verifyJWT, logOut);
+router.use(verifyJWT);
+
+router.route("/logout").post(logOut);
+
+// Block protection
+router.use(isBlocked);
+
 router.route("/profile").put(
-  verifyJWT,
   upload.fields([
     {
       name: "profilePic",
@@ -39,14 +52,20 @@ router.route("/profile").put(
   ]),
   updateProfile,
 );
-router.route("/").get(verifyJWT, getFriends);
-router.route("/").delete(verifyJWT, removeFriend);
+router.route("/").get(getFriends);
+router.route("/").delete(removeFriend);
 
-router.route("/friends").get(verifyJWT, getPotentialFriends);
-router.route("/friends").post(verifyJWT, sendFriendRequest);
+router.route("/friends").get(getPotentialFriends);
+router.route("/friends").post(sendFriendRequest);
 
-router.route("/friends/requests").get(verifyJWT, showFriendRequests);
-router.route("/friends/requests").post(verifyJWT, acceptFriendRequest);
-router.route("/friends/requests").delete(verifyJWT, discardFriendRequest);
+router.route("/friends/requests").get(showFriendRequests);
+router.route("/friends/requests").post(acceptFriendRequest);
+router.route("/friends/requests").delete(discardFriendRequest);
+
+// Admin secured routes
+router.route("/users").get(isAdmin, getAllUsers);
+router.route("/users").patch(isAdmin, toggleBlockUser);
+router.route("/users/blocked").get(isAdmin, getBlockedUsers);
+router.route("/users").delete(isAdmin, deleteUserAccount);
 
 export default router;
