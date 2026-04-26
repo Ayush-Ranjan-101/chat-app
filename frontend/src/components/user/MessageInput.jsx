@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, Image, X } from "lucide-react";
-import useChatStore from "../store/useChatStore";
+import useChatStore from "../../store/useChatStore";
 
 const MessageInput = () => {
   const [text, setText] = useState("");

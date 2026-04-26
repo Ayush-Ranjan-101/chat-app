@@ -4,11 +4,12 @@ import { AnimatePresence } from "framer-motion";
 import { Toaster } from "react-hot-toast";
 import { Loader2 } from "lucide-react";
 
-import Navbar from "./components/Navbar";
-import HomePage from "./pages/HomePage";
+import Navbar from "./components/common/Navbar";
+import HomePage from "./pages/user/HomePage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
-import ProfilePage from "./pages/ProfilePage";
+import ProfilePage from "./pages/user/ProfilePage";
+import AdminPage from "./pages/admin/AdminPage";
 import useAuthStore from "./store/useAuthStore";
 
 const App = () => {
@@ -50,6 +51,16 @@ const App = () => {
           <Route
             path="/profile"
             element={authUser ? <ProfilePage /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/admin"
+            element={
+              authUser?.role === "admin" ? (
+                <AdminPage />
+              ) : (
+                <Navigate to="/" />
+              )
+            }
           />
         </Routes>
       </AnimatePresence>

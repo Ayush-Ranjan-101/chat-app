@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { MessageSquare, User, LogOut, Settings } from "lucide-react";
-import useAuthStore from "../store/useAuthStore";
+import { MessageSquare, User, LogOut, Shield } from "lucide-react";
+import useAuthStore from "../../store/useAuthStore";
 
 const Navbar = () => {
   const { authUser, logout } = useAuthStore();
@@ -25,6 +25,19 @@ const Navbar = () => {
 
         {/* Right actions */}
         <div className="flex items-center gap-2">
+          {/* Admin link — only visible to admins */}
+          {authUser?.role === "admin" && (
+            <Link
+              to="/admin"
+              className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-violet-500/10 transition-all duration-200 group"
+            >
+              <Shield className="w-5 h-5 text-accent-light group-hover:text-accent transition-colors" />
+              <span className="text-sm text-slate-300 hidden sm:inline group-hover:text-accent-light transition-colors">
+                Admin
+              </span>
+            </Link>
+          )}
+
           <Link
             to="/profile"
             className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-slate-700/40 transition-all duration-200 group"
