@@ -34,7 +34,7 @@ app.use("/api/v1/messages", messageRouter);
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "./frontend/dist"))); // Check this path
 
-  app.get("*", (req, res) => {
+  app.get(/.*/, (req, res) => {
     res.sendFile(path.join(__dirname, "./frontend/dist/index.html"));
   })
 }
