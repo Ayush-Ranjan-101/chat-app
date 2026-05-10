@@ -7,7 +7,7 @@ import { app } from "./utils/socket.js"; // Use the instance from socket.js
 const __dirname = path.resolve();
 
 // Basic configurations
-app.use(express.json({ limit: "5mb" }));
+app.use(express.json({ limit: "15mb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(cookieParser());
 
@@ -32,10 +32,10 @@ app.use("/api/v1/messages", messageRouter);
 
 // Production Static Files
 if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "./frontend/dist"))); // Check this path
+  app.use(express.static(path.join(__dirname, "../frontend/dist"))); // Check this path
 
-  app.get(/.*/, (req, res) => {
-    res.sendFile(path.join(__dirname, "./frontend/dist/index.html"));
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "../frontend", "dist", "index.html"));
   })
 }
 
