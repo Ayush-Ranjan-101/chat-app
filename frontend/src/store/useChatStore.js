@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import axiosInstance from "../lib/axios";
 import toast from "react-hot-toast";
+import useAuthStore from "./useAuthStore";
 
 const useChatStore = create((set, get) => ({
   messages: [],
@@ -80,6 +81,44 @@ const useChatStore = create((set, get) => ({
         error.response?.data?.message || "Failed to delete message";
       toast.error(msg);
     }
+  },
+
+  subscribeToMessages: () => {
+    const { selectedUser } = get();
+    if (!selectedUser) return;
+
+    const socket = useAuthStore.getState().socket;
+    if (!socket) return;
+
+    socket.on("newMessage", (newMessage) => {
+      if (newMessage.senderId !== selectedUser._id) return;
+      set({
+        messages: [...get().messages, newMessage],
+      });
+    });
+
+    socket.on("messageUpdated", (updatedMessage) => {
+      set({
+        messages: get().messages.map((m) =>
+          m._id === updatedMessage._id ? updatedMessage : m
+        ),
+      });
+    });
+
+    socket.on("messageDeleted", ({ messageId }) => {
+      set({
+        messages: get().messages.filter((m) => m._id !== messageId),
+      });
+    });
+  },
+
+  unsubscribeFromMessages: () => {
+    const socket = useAuthStore.getState().socket;
+    if (!socket) return;
+
+    socket.off("newMessage");
+    socket.off("messageUpdated");
+    socket.off("messageDeleted");
   },
 }));
 

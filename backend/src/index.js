@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
-import app from "./app.js";
 import connectDB from "./db/connectDB.js";
+import { server } from "./utils/socket.js";
+import "./app.js";
 
 dotenv.config({
   path: "./.env",
@@ -12,7 +13,7 @@ const main = async () => {
   try {
     await connectDB();
 
-    app.listen(port, () => {
+    server.listen(port, () => {
       console.log(`✅ Server is running on http://localhost:${port}`);
     });
   } catch (err) {

@@ -1,8 +1,12 @@
 import { X } from "lucide-react";
 import useChatStore from "../../store/useChatStore";
+import useAuthStore from "../../store/useAuthStore";
 
 const ChatHeader = () => {
   const { selectedUser, setSelectedUser } = useChatStore();
+  const { onlineUsers } = useAuthStore();
+  
+  const isOnline = onlineUsers.includes(selectedUser?._id);
 
   const avatarUrl =
     selectedUser?.profilePic ||
@@ -17,12 +21,15 @@ const ChatHeader = () => {
             alt={selectedUser?.username}
             className="w-10 h-10 rounded-full object-cover ring-2 ring-primary/20"
           />
+          {isOnline && (
+            <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-base-200 shadow-sm" />
+          )}
         </div>
         <div>
           <h3 className="text-sm font-semibold text-slate-200">
             {selectedUser?.username}
           </h3>
-          <p className="text-xs text-slate-500">Online</p>
+          <p className="text-xs text-slate-500">{isOnline ? "Online" : "Offline"}</p>
         </div>
       </div>
 

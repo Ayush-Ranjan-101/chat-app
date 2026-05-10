@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, Users, UserPlus, Search, UserCheck, UserX, UserMinus, Loader2 } from "lucide-react";
 import useFriendStore from "../../store/useFriendStore";
 import useChatStore from "../../store/useChatStore";
+import useAuthStore from "../../store/useAuthStore";
 
 const TABS = [
   { id: "chats", label: "Chats", icon: MessageCircle },
@@ -15,6 +16,7 @@ const Sidebar = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const { friends, potentialFriends, friendRequests, isLoading, getFriends, getPotentialFriends, showFriendRequests, sendFriendRequest, acceptFriendRequest, discardFriendRequest, removeFriend } = useFriendStore();
   const { selectedUser, setSelectedUser } = useChatStore();
+  const { onlineUsers } = useAuthStore();
 
   useEffect(() => { getFriends(); }, [getFriends]);
   useEffect(() => {
@@ -60,74 +62,70 @@ const Sidebar = () => {
           <div className="flex items-center justify-center py-10"><Loader2 className="w-6 h-6 text-primary animate-spin" /></div>
         ) : (
           <AnimatePresence mode="popLayout">
-            {activeTab === "chats" && (
-              <>
-                {filteredFriends.length === 0 ? (
-                  <EmptyState message="No friends yet. Go to Discover to find people!" />
-                ) : (
-                  filteredFriends.map((friend, i) => (
-                    <motion.button key={friend._id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ delay: i * 0.05 }}
-                      onClick={() => setSelectedUser(friend)}
-                      className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-200 group mb-1 ${selectedUser?._id === friend._id ? "bg-primary/10 border border-primary/20" : "hover:bg-slate-700/30"}`}>
-                      <div className="relative"><img src={getAvatarUrl(friend)} alt={friend.username} className="w-11 h-11 rounded-full object-cover ring-2 ring-slate-600/50" /></div>
-                      <div className="flex-1 min-w-0 text-left">
-                        <p className="text-sm font-medium text-slate-200 truncate">{friend.username}</p>
-                        <p className="text-xs text-slate-500 truncate">Click to start chatting</p>
-                      </div>
-                      <button onClick={(e) => { e.stopPropagation(); removeFriend(friend._id); }}
-                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-500/10 text-slate-500 hover:text-red-400 transition-all" title="Remove friend">
-                        <UserMinus className="w-4 h-4" />
-                      </button>
-                    </motion.button>
-                  ))
-                )}
-              </>
+            {activeTab === "chats" && filteredFriends.length === 0 && (
+              <EmptyState key="empty-chats" message="No friends yet. Go to Discover to find people!" />
             )}
+            {activeTab === "chats" && filteredFriends.length > 0 &&
+              filteredFriends.map((friend, i) => (
+                <motion.div key={friend._id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ delay: i * 0.05 }}
+                  onClick={() => setSelectedUser(friend)}
+                  className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-200 group mb-1 cursor-pointer ${selectedUser?._id === friend._id ? "bg-primary/10 border border-primary/20" : "hover:bg-slate-700/30"}`}>
+                  <div className="relative">
+                    <img src={getAvatarUrl(friend)} alt={friend.username} className="w-11 h-11 rounded-full object-cover ring-2 ring-slate-600/50" />
+                    {onlineUsers.includes(friend._id) && (
+                      <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-base-200 shadow-sm" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0 text-left">
+                    <p className="text-sm font-medium text-slate-200 truncate">{friend.username}</p>
+                    <p className="text-xs text-slate-500 truncate">Click to start chatting</p>
+                  </div>
+                  <button onClick={(e) => { e.stopPropagation(); removeFriend(friend._id); }}
+                    className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-500/10 text-slate-500 hover:text-red-400 transition-all" title="Remove friend">
+                    <UserMinus className="w-4 h-4" />
+                  </button>
+                </motion.div>
+              ))
+            }
 
-            {activeTab === "discover" && (
-              <>
-                {filteredPotential.length === 0 ? (
-                  <EmptyState message="No new people to discover right now." />
-                ) : (
-                  filteredPotential.map((user, i) => (
-                    <motion.div key={user._id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ delay: i * 0.05 }}
-                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-700/30 transition-all mb-1">
-                      <img src={getAvatarUrl(user)} alt={user.username} className="w-11 h-11 rounded-full object-cover ring-2 ring-slate-600/50" />
-                      <div className="flex-1 min-w-0"><p className="text-sm font-medium text-slate-200 truncate">{user.username}</p></div>
-                      <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => sendFriendRequest(user._id)}
-                        className="px-3 py-1.5 bg-primary/15 text-primary-light text-xs font-semibold rounded-lg hover:bg-primary/25 transition-colors flex items-center gap-1">
-                        <UserPlus className="w-3.5 h-3.5" />Add
-                      </motion.button>
-                    </motion.div>
-                  ))
-                )}
-              </>
+            {activeTab === "discover" && filteredPotential.length === 0 && (
+              <EmptyState key="empty-discover" message="No new people to discover right now." />
             )}
+            {activeTab === "discover" && filteredPotential.length > 0 &&
+              filteredPotential.map((user, i) => (
+                <motion.div key={user._id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ delay: i * 0.05 }}
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-700/30 transition-all mb-1">
+                  <img src={getAvatarUrl(user)} alt={user.username} className="w-11 h-11 rounded-full object-cover ring-2 ring-slate-600/50" />
+                  <div className="flex-1 min-w-0"><p className="text-sm font-medium text-slate-200 truncate">{user.username}</p></div>
+                  <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => sendFriendRequest(user._id)}
+                    className="px-3 py-1.5 bg-primary/15 text-primary-light text-xs font-semibold rounded-lg hover:bg-primary/25 transition-colors flex items-center gap-1">
+                    <UserPlus className="w-3.5 h-3.5" />Add
+                  </motion.button>
+                </motion.div>
+              ))
+            }
 
-            {activeTab === "requests" && (
-              <>
-                {filteredRequests.length === 0 ? (
-                  <EmptyState message="No pending friend requests." />
-                ) : (
-                  filteredRequests.map((req, i) => (
-                    <motion.div key={req._id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ delay: i * 0.05 }}
-                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-700/30 transition-all mb-1">
-                      <img src={getAvatarUrl(req)} alt={req.username} className="w-11 h-11 rounded-full object-cover ring-2 ring-slate-600/50" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-slate-200 truncate">{req.username}</p>
-                        <p className="text-xs text-slate-500">{req.email}</p>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => acceptFriendRequest(req._id)}
-                          className="p-2 bg-success/15 text-success rounded-lg hover:bg-success/25 transition-colors" title="Accept"><UserCheck className="w-4 h-4" /></motion.button>
-                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => discardFriendRequest(req._id)}
-                          className="p-2 bg-danger/15 text-danger rounded-lg hover:bg-danger/25 transition-colors" title="Decline"><UserX className="w-4 h-4" /></motion.button>
-                      </div>
-                    </motion.div>
-                  ))
-                )}
-              </>
+            {activeTab === "requests" && filteredRequests.length === 0 && (
+              <EmptyState key="empty-requests" message="No pending friend requests." />
             )}
+            {activeTab === "requests" && filteredRequests.length > 0 &&
+              filteredRequests.map((req, i) => (
+                <motion.div key={req._id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ delay: i * 0.05 }}
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-700/30 transition-all mb-1">
+                  <img src={getAvatarUrl(req)} alt={req.username} className="w-11 h-11 rounded-full object-cover ring-2 ring-slate-600/50" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-slate-200 truncate">{req.username}</p>
+                    <p className="text-xs text-slate-500">{req.email}</p>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => acceptFriendRequest(req._id)}
+                      className="p-2 bg-success/15 text-success rounded-lg hover:bg-success/25 transition-colors" title="Accept"><UserCheck className="w-4 h-4" /></motion.button>
+                    <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => discardFriendRequest(req._id)}
+                      className="p-2 bg-danger/15 text-danger rounded-lg hover:bg-danger/25 transition-colors" title="Decline"><UserX className="w-4 h-4" /></motion.button>
+                  </div>
+                </motion.div>
+              ))
+            }
           </AnimatePresence>
         )}
       </div>
